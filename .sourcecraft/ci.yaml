@@ -1,26 +1,48 @@
+name: Lab CI/CD Pipeline
+
 on:
   push:
-    - workflows: [lab-check]
-      filter:
-        branches: ["main", "master"]
-
+    branches: [main, master]
   pull_request:
-    - workflows: [lab-check]
+    branches: [main, master]
 
-workflows:
-  lab-check:
-    tasks:
-      - name: run-notebook-and-build-report
-        cubes:
-          - name: execute-notebook
-            image: docker.io/library/python:3.11
-            script:
-              # Список ваших команд для получения результата
-              # Важно, на выходе из кубика должны получиться файлы по путям, переданным в artifacts.paths
-              # Замените команды ниже для формирования артефактов на базе вашего "lab.ipynb" файла
-              - touch executed_lab.ipynb
-              - touch report.html
-            artifacts:
-              paths:
-                - executed_lab.ipynb
-                - report.html
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          pip install nbconvert nbformat
+      
+      - name: Execute notebook
+        run: |
+          jupyter nbconvert --to notebook --execute lab.ipynb --output lab_executed.ipynb
+      
+      - name: Generate HTML report
+        run: |
+          jupyter nbconvert --to html lab_executed.ipynb --output lab_report
+      
+      - name: Upload HTML report as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: lab-report
+          path: lab_report.html
+          retention-days: 30
+      
+      - name: Upload executed notebook as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: executed-notebook
+          path: lab_executed.ipynb
+          retention-days: 30
