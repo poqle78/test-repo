@@ -35,7 +35,7 @@ workflows:
 - **Runner ID:** {runner_id}
 - **Hostname:** {hostname}
 - **Timestamp:** {ts}
-- **Environment:** CI/CD (not local, not Google Colab)
+- **Environment:** CI/CD
 """
                 
                 ci_cell = nbformat.v4.new_markdown_cell(ci_text)
