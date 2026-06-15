@@ -7,17 +7,50 @@ on:
 workflows:
   lab-check:
     tasks:
-      - name: run-lab
+      - name: run-notebook-and-build-report
         cubes:
-          - name: python-runner
+          - name: execute-and-deploy
             image: docker.io/library/python:3.11
             script:
-              - pip install -q --upgrade pip
               - pip install -q -r requirements.txt
               - pip install -q jupyter nbconvert
-              - jupyter nbconvert --to notebook --execute lab.ipynb --output lab_executed.ipynb
-              - jupyter nbconvert --to html lab_executed.ipynb --output lab_report
+
+              - jupyter nbconvert --to notebook --execute lab.ipynb --output executed_lab.ipynb
+
+              - jupyter nbconvert --to html executed_lab.ipynb --output report.html
+
+              - |
+                python3 << 'PYEOF'
+                import nbformat
+                import datetime
+                import os
+                
+                with open('executed_lab.ipynb', 'r', encoding='utf-8') as f:
+                    nb = nbformat.read(f, as_version=4)
+                
+                ts = datetime.datetime.now(datetime.timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
+                hostname = os.getenv('HOSTNAME', 'sourcecraft-runner')
+                runner_id = os.getenv('RUNNER_ID') or os.getenv('CI_JOB_ID') or 'sourcecraft-ci'
+                
+                ci_text = f"""## CI/CD Execution Info
+
+- **Executed by:** SourceCraft CI/CD Runner
+- **Runner ID:** {runner_id}
+- **Hostname:** {hostname}
+- **Timestamp:** {ts}
+- **Environment:** CI/CD (not local, not Google Colab)
+"""
+                
+                ci_cell = nbformat.v4.new_markdown_cell(ci_text)
+                nb.cells.insert(0, ci_cell)
+
+                with open('executed_lab.ipynb', 'w', encoding='utf-8') as f:
+                    nbformat.write(nb, f)
+                PYEOF
+
+              - jupyter nbconvert --to html executed_lab.ipynb --output report.html
+
             artifacts:
               paths:
-                - lab_executed.ipynb
-                - lab_report.html
+                - executed_lab.ipynb
+                - report.html
