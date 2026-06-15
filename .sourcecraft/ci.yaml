@@ -33,14 +33,6 @@ workflows:
                 runner_id = os.getenv('RUNNER_ID') or os.getenv('CI_JOB_ID') or 'sourcecraft-ci'
                 
                 ci_text = f"""## CI/CD Execution Info
-
-- **Executed by:** SourceCraft CI/CD Runner
-- **Runner ID:** {runner_id}
-- **Hostname:** {hostname}
-- **Timestamp:** {ts}
-- **Environment:** CI/CD (not local, not Google Colab)
-"""
-                
                 ci_cell = nbformat.v4.new_markdown_cell(ci_text)
                 nb.cells.insert(0, ci_cell)
 
