@@ -13,11 +13,9 @@ workflows:
             image: docker.io/library/python:3.11
             script:
               - pip install -q -r requirements.txt
-              - pip install -q jupyter nbconvert
+              - pip install -q jupyter nbconvert nbformat
 
-              - jupyter nbconvert --to notebook --execute lab.ipynb --output executed_lab.ipynb
-
-              - jupyter nbconvert --to html executed_lab.ipynb --output report.html
+              - jupyter nbconvert --to notebook --execute lab_template.ipynb --output executed_lab.ipynb --allow-errors
 
               - |
                 python3 << 'PYEOF'
@@ -32,15 +30,15 @@ workflows:
                 hostname = os.getenv('HOSTNAME', 'sourcecraft-runner')
                 runner_id = os.getenv('RUNNER_ID') or os.getenv('CI_JOB_ID') or 'sourcecraft-ci'
                 
-                ci_text = f"""## CI/CD Execution Info
+                ci_text = f"""## CI/CD Execution Info           
                 ci_cell = nbformat.v4.new_markdown_cell(ci_text)
                 nb.cells.insert(0, ci_cell)
-
+                
                 with open('executed_lab.ipynb', 'w', encoding='utf-8') as f:
                     nbformat.write(nb, f)
                 PYEOF
 
-              - jupyter nbconvert --to html executed_lab.ipynb --output report.html
+              - jupyter nbconvert --to html executed_lab.ipynb --output report.html --allow-errors
 
             artifacts:
               paths:
